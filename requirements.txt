@@ -1,0 +1,6 @@
+streamlit
+pandas
+fastapi
+uvicorn
+google-genai
+python-dotenv
