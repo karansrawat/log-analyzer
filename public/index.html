@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Log Analyzer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@example/tailwindcss@2.2.19/dist/tailwind.min.css"> <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #fafafa; }
+        .card { background: white; border: 1px solid #eaeaea; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-900">♊ Gemini Log Analyzer</h1>
+            <p class="text-gray-500">Decoupled Serverless Incident Responder Running on Vercel</p>
+        </header>
+
+        <div class="card p-6 mb-6">
+            <div class="mb-4">
+                <label class="block font-medium mb-1 text-gray-700">Optional: Paste Gemini API Key</label>
+                <input type="password" id="customKey" placeholder="Leave blank if configured in Vercel Dashboard" class="w-full p-2 border rounded">
+            </div>
+            <div class="mb-4">
+                <label class="block font-medium mb-1 text-gray-700">Select Log File</label>
+                <input type="file" id="logFile" class="w-full p-2 border rounded bg-gray-50">
+            </div>
+            <button onclick="uploadAndAnalyze()" id="btn" class="bg-black text-white px-4 py-2 rounded font-medium hover:bg-gray-800 transition w-full">
+                🚀 Analyze Logs with Gemini
+            </button>
+        </div>
+
+        <div id="metrics" class="grid grid-cols-2 gap-4 mb-6 hidden">
+            <div class="card p-4 text-center">
+                <div class="text-gray-500 text-sm">Total Logs Processed</div>
+                <div id="metricTotal" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="card p-4 text-center border-red-200 bg-red-50">
+                <div class="text-red-600 text-sm font-medium">Critical Errors/Spikes</div>
+                <div id="metricErrors" class="text-2xl font-bold text-red-600">0</div>
+            </div>
+        </div>
+
+        <div id="resultCard" class="card p-6 hidden">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">🤖 Gemini Root Cause Analysis</h3>
+            <pre id="output" class="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed bg-gray-50 p-4 rounded border"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function uploadAndAnalyze() {
+            const fileInput = document.getElementById('logFile');
+            const keyInput = document.getElementById('customKey');
+            const btn = document.getElementById('btn');
+            
+            if (!fileInput.files[0]) return alert("Please select a log file first!");
+            
+            btn.innerText = "Analyzing logs in Serverless Function...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            if (keyInput.value) formData.append('custom_key', keyInput.value);
+
+            try {
+                // Pointing relatively allows Vercel to automatically resolve local vs production domains
+                const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    document.getElementById('metrics').classList.remove('hidden');
+                    document.getElementById('resultCard').classList.remove('hidden');
+                    document.getElementById('metricTotal').innerText = data.total_logs;
+                    document.getElementById('metricErrors').innerText = data.total_errors;
+                    document.getElementById('output').innerText = data.analysis;
+                }
+            } catch (err) {
+                alert("Failed to hit Serverless Route.");
+            } finally {
+                btn.innerText = "🚀 Analyze Logs with Gemini";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
